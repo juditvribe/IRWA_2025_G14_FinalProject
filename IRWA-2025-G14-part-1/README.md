@@ -1,8 +1,10 @@
 **Instructions**
+
 Place the dataset files (fashion_products_dataset.json and validation_labels.csv) inside the data/ directory.
 Open the main notebook (IRWA_Part1_Preprocessing_and_EDA.ipynb) and execute it sequentially.
 
 **Functions Overview**
+
 _build_terms(line):_
 Cleans and normalizes text by converting to lowercase, removing punctuation and digits, tokenizing, removing stopwords, and applying stemming using the PorterStemmer. Returns a list of processed tokens.
 
