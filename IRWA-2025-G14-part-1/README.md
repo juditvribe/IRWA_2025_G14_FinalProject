@@ -19,6 +19,3 @@ Visualizes the top 10 most frequent elements from a given frequency dictionary. 
 
 _avg_length(df, field):_
 Calculates the average number of tokens per document for a specified text field. Useful for analyzing the relative verbosity of product titles and descriptions.
-
-_extract_domain_entities(text):_
-Performs rule-based entity detection to identify fashion-related attributes such as colors, fabrics, and sizes within product titles and descriptions. Complements the general spaCy NER model.
