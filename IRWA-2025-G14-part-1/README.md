@@ -14,7 +14,7 @@ Converts the list of dictionaries contained in the product_details field into a 
 _word_count(df, fields):_
 Iterates through specified text fields in the dataset and counts token occurrences across all documents. Returns a dictionary of word frequencies sorted in descending order.
 
-_plot_top_10(dic, xlabel, ylabel, color):_
+_plot_top_10(dic, category, xlabel, ylabel, color):_
 Visualizes the top 10 most frequent elements from a given frequency dictionary. Produces a bar chart with labeled axes and a line plot overlay for readability.
 
 _avg_length(df, field):_
