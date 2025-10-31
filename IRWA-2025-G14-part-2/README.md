@@ -1,4 +1,5 @@
 **Instructions**
+
 Place the preprocessed dataset file (e.g., fashion_df_processed.csv) and validation labels (validation_labels.csv) inside the data/ directory.
 Open the main notebook (IRWA_Part2_Indexing_and_Evaluation.ipynb) and execute it sequentially.
 
