@@ -8,7 +8,7 @@ Open the main notebook (IRWA_Part2_Indexing_and_Evaluation.ipynb) and execute it
 _create_index_fashion_fields(fashion_df):_
 Builds a basic inverted index for the dataset. Iterates through selected fields (category, sub_category, brand, product_details, seller) and maps each term to the documents and fields in which it appears. Returns the inverted index (index) and a dictionary mapping product IDs to their titles (title_index).
 
-_search(index):_
+_search(query, index):_
 Performs a conjunctive (AND) search on the inverted index. Retrieves documents containing all query terms, after preprocessing them with build_terms(). Returns a list of document IDs that match the query.
 
 _create_index_tfidf(dataset):_
@@ -46,3 +46,6 @@ Calculates the Discounted Cumulative Gain (DCG) metric, which measures ranking q
 
 _ndcg_at_k(y_true, y_score, k=10):_
 Computes the Normalized Discounted Cumulative Gain (nDCG), which normalizes the DCG score by the ideal ranking. Values range from 0 to 1, where 1 indicates a perfect ranking.
+
+_query_to_vector(query, vocab, idf):_
+Transforms a given query into a TF-IDF vector in order to compute cosine similarity with the documents of the corpus.
