@@ -15,6 +15,7 @@ This lab implements several ranking and filtering techniques for product search.
 ### BM25 Ranking
 - **`bm25_rank(query, docs, index, tf, idf, doc_lengths, k1, b, top_k, build_terms_fn)`**  
   Implements BM25 ranking. Scores documents based on term frequency saturation, inverse document frequency, and document length normalization.
+  
 - **Helper functions**:
   - `compute_doc_lengths_from_tf(tf)`: Computes length of every document considering the TF dictionary.  
 
