@@ -15,6 +15,27 @@ class AnalyticsData:
 
     ### Please add your custom tables here:
 
+    # statistics table 2
+    fact_http_requests = dict([])
+
+    # statistics table 3
+    fact_search_options = dict([])
+
+    # statistics table 4
+    fact_http_sessions = dict([])
+
+    # statistics table 5 
+    # fact_queries is a dictionary with the queries counters: key = query | value = query counter
+    fact_queries = dict([])
+
+    # key = query | value = list of document ids
+    fact_queries_to_docs = dict([])
+
+    #clicks start being -1 because when return to the main page you add 1 click, and we do not want to add when we first enter
+    fact_tot_num_clicks = -1
+    fact_browser = 0
+    fact_os = 0
+
     def save_query_terms(self, terms: str) -> int:
         print(self)
         return random.randint(0, 100000)

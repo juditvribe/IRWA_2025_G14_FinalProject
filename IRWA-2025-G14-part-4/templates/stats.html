@@ -1,15 +1,80 @@
 {% extends "base.html" %}
 {% block page_title %}{{ page_title }}{% endblock %}
 {% block content %}
+    <body>
+        <div><a href="/">New Query</a></div>
+        <div class="link-container">
+            <a href="/dashboard" >Dashboard</a></div>
+    <hr>
     <h2>Quick Stats</h2>
-    <h4>Clicked docs:</h4>
+    <style>
+        .link-container {
+            text-align: right;
+        }
+        h2 {
+          text-align: center;
+          color:black;
+          font-family:'Times New Roman', Times, serif;
+          font-weight: bold;
+        }
+        h5 {
+          color:rgb(185, 52, 52);
+        }
+    </style>
 
+    <h4>Clicked docs:</h4>
     {% for doc in clicks_data %}
         <div class="pb-3">
             <div class="">
                 <span class="text-dark"> ({{ doc.count }} visits) </span> — id: {{ doc.pid }} — {{ doc.title }} - {{ doc.description }}
+                <br>
+                <b>Associated Queries:</b>
+                    {% for query, list_docs in docs_for_queries %}
+                        {% if doc.id in list_docs%}
+                            {{ query }}
+                        {% endif %}
+                    {% endfor %}
             </div>
         </div>
         <hr>
     {% endfor %}
+
+    <h5>Users:</h5>  
+    {% for user in request_data %}
+        <div class="pb-3">
+            <div class="">
+                <span class="text-dark"> User with IP <b>{{ user.id }}</b> has done {{ user.count }} requests </span> 
+            </div>
+        </div>
+    {% endfor %}
+
+    <h5>Active sessions:</h5>  
+    {% for ses in session_data %}
+        <div class="pb-3">
+            <div class="">
+                <span class="text-dark"> Session <b>{{ ses.id }}</b> was opened at {{ ses.start }} and has been active for {{ ses.time_elapsed }} minutes. </br> </span>
+                <span class="text-dark"> There has been <b>{{ ses.clicks }}</b> clicks in this session. </br></span>
+                <span class="text-dark"> The session was established in the browser <b>{{ ses.browser }}</b> with <b>{{ ses.os }}</b> as the operating system. </span>
+            </div>
+        </div>
+    {% endfor %}
+
+    <h5>Top-5 most searched queries:</h5>  
+    {% for quer in queries_data %}
+        <div class="pb-3">
+            <div class="">
+                <span class="text-dark"> Query <b>{{ quer.query }}</b> has been searched {{ quer.count }} times. </span> 
+            </div>
+        </div>
+    {% endfor %}
+
+    {% if averages[0] > 0 %}
+    <div class="pb-3">
+        <div class="">
+            <span class="text-dark"> The average number of words for the top5 queries is <b>{{ averages[0] }}</b>. </span>
+            <span class='text-dark'>and the average for all queries is <b>{{ averages[1] }}</b>. </span> 
+        </div>
+    </div>
+    {% endif %}
+
 {% endblock %}

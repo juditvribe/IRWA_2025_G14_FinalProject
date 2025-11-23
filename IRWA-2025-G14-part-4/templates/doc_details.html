@@ -1,18 +1,72 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Document Detail - IRWA Search Engine</title>
-</head>
-<body>
-<div><a href="/" >Home</a></div>
-<div><a href="/stats" >Stats</a></div>
-<div><a href="/dashboard" >Dashboard</a></div>
-<h1>Document Detail Page</h1>
-<p>This is a placeholder for document details.</p>
-<p>Here you can display more information about the document.</p>
-<p>For example, you might show the full text of the document, metadata, or other relevant details.</p>
-<p>You can also include links to related documents or resources.</p>
-<p>Feel free to customize this page to fit the needs of your application.</p>
-</body>
-</html>
+{% extends "base.html" %}
+{% block page_title %}{{ page_title }}{% endblock %}
+{% block content %}
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Document Detail - IRWA Search Engine</title>
+    </head>
+    <style>
+            .link-container {
+                text-align: right;
+            }
+            .title {
+                margin-bottom: 15px; /* Espacio entre el título y la descripción */
+                font-size: 1.1em; /* Tamaño de fuente un poco más grande */
+                color: #550505;
+            }
+            .extra-info {
+                font-size: 1em; /* Tamaño de fuente más pequeño */
+                color: #0d0c0c; /* Color gris */
+            }
+            .doc-url {
+                font-style: italic; /* Apply italics to urls */
+                font-size: 0.9em; /* Consistent font size with extra-info */
+                color: #003cff; /* Same color as extra-info */
+            }
+    </style>
+    <body>
+        <div><a href="/" >Home</a></div>
+    <div class="link-container"></div>
+        <div><a href="/stats" >Stats</a></div>
+    <div><a href="/dashboard" >Dashboard</a></div>
+
+    <hr>
+
+    <h1>Document Detail Page</h1>
+    <p>This is a placeholder for document details.</p>
+    <p>Here you can display more information about the document.</p>
+    <p>For example, you might show the full text of the document, metadata, or other relevant details.</p>
+    <p>You can also include links to related documents or resources.</p>
+    <p>Feel free to customize this page to fit the needs of your application.</p>
+    </body>
+    </html>
+
+    <div class="title">
+        <b>Product Id: </b> {{clicked_doc_id.pid}} <br>
+        <b>Product Title: </b> {{clicked_doc_id.title}}... <br>
+        <b>Product Description: </b> {{clicked_doc_id.description}}
+    </div>
+    <div class="extra-info">
+        <b>Brand: </b> {{clicked_doc_id.brand}} <br>
+        <b>Category: </b> {{clicked_doc_id.category}} - <b>Subcategory: </b> {{clicked_doc_id.sub_category}} <br>
+        <b>Product Details: </b> {{clicked_doc_id.product_details}} <br>
+        <b>Seller: </b> {{clicked_doc_id.seller}} <br>
+        <b>Selling Price: </b> {{clicked_doc_id.selling_price}} <br>
+        <b>Discount: </b> {{clicked_doc_id.discount}} <br>
+        <b>Actual Price: </b> {{clicked_doc_id.actual_price}} <br>
+        <b>Average Rating: </b> {{clicked_doc_id.average_rating}} <br>
+        {% if clicked_doc_id.out_of_stock %}
+            The product is <b>out_of_stock</b>
+        {% else %}
+            The product is <b>not out_of_stock</b>
+        {% endif %}
+        <br>
+        {% if clicked_doc_id.url %}
+            <b>Url: </b> <a href="{{clicked_doc_id.url}}">{{clicked_doc_id.url}}</a>
+        {% endif %}
+    </div>        
+            
+
+{% endblock %}

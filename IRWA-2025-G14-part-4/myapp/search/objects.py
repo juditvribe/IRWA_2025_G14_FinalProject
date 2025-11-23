@@ -109,3 +109,30 @@ class ResultItem(BaseModel):
     
     def to_json(self):
         return self.model_dump_json()
+
+
+
+class UserReq:
+    def __init__(self, id, count):
+        self.id = id
+        self.count = count
+
+class Session:
+    def __init__(self, id, start, actual_time, clicks, browser, os):  
+        self.id = id
+        self.start = start.replace(microsecond=0)
+        self.actual_time = actual_time
+        start_time = start.hour * 60 + start.minute
+        end_time = actual_time.hour * 60 + actual_time.minute
+        self.time_elapsed = end_time-start_time
+        self.clicks = clicks
+        self.browser = browser
+        self.os= os
+
+class Query:
+    def __init__(self, query, count):
+        self.query = query
+        self.count = count 
+
+    def to_json(self):
+        return self.__dict__

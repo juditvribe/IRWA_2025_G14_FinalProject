@@ -26,6 +26,273 @@
     <iframe src="/plot_number_of_views" width="600" height="400" style="border: none;"></iframe>
 
 
+    <style>
+        .link-container {
+            text-align: right;
+        }
+    </style>
+    <body>
+        <div><a href="/">New Query</a></div>
+        <div class="link-container">
+            <a href="/stats" >Stats</a></div>
+    <hr>
+
+    </body>
+    <script>
+        // 'visited_docs' is the data coming from Python code.
+        // load the python list in the JS variable 'visits_list':
+        const visits_list = {{ visited_docs | tojson | safe }};
+        console.log("visited docs: ")
+        console.log(visits_list)
+    </script>
+
+    <h2>Ranking of Visited Documents</h2>
+    <canvas id="dailyVisits" width="400" height="400"></canvas>
+
+
+    <script>
+        // use JS map function top get just the tweet ids as labels
+        const visitsLabels = visits_list.map(a => "id: " + a.doc_id);
+        const visitsData = visits_list.map(a => a.counter);
+        const chartData_visits = {
+            labels: visitsLabels,
+            datasets: [{
+                label: 'Visits count',
+                data: visitsData,
+                fill: false,
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1
+            }]
+        };
+
+        const ctx_visits = document.getElementById('dailyVisits').getContext('2d');
+
+        // This will render the chart
+        const myChart_visits = new Chart(ctx_visits, {
+            type: 'line',
+            data: chartData_visits,
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+    </script>
+
+    <hr>
+    <style>
+        h2 {
+          text-align: center;
+          color:black;
+          font-weight: bold;
+          margin-bottom: 15px;
+        }
+        h5 {
+          margin-bottom: 15px;
+        }
+    </style>
+    <h5>The documents displayed above are the following</h5>
+    {% for doc in visited_docs %}
+        <div class="pb-3">
+            <div class="">
+                <span class="text-dark"> ({{ doc.counter }} visits) </span> — id: <a href="/doc_details?id={{ doc.doc_id }}">{{ doc.doc_id }}</a>
+                — {{ doc.description }}
+                <b>Associated Queries:</b>
+                    {% for query, list_docs in d_and_q %}
+                        {% if doc.doc_id in list_docs %}
+                            {{ query }}
+                        {% endif %}
+                    {% endfor %}
+            </div>
+        </div>
+        <hr>
+    {% endfor %}
+
+    <hr>
+    <h2>Queries dashboard</h2>
+    <style>
+        h2 {
+          text-align: center;
+        }
+    </style>
+    <br>
+    
+    <script>
+        const queries_list = {{ queries_data | tojson | safe }};
+        console.log("queries list: ")
+        console.log(queries_list)
+    </script>
+
+    <canvas id="dailyQueries" width="400" height="400"></canvas>
+    <script>
+        const queriesLabels = queries_list.map(a => "query: " + a.query);
+        const queriesData = queries_list.map(a => a.count);
+        const chartData_queries = {
+            labels: queriesLabels,
+            datasets: [{
+                label: 'Queries count',
+                data: queriesData,
+                fill: false,
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1
+            }]
+        };
+
+        const ctx_queries = document.getElementById('dailyQueries').getContext('2d');
+
+        // This will render the chart
+        const myChart_queries = new Chart(ctx_queries, {
+            type: 'line',
+            data: chartData_queries,
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
+
+    <br>
+    <h5>The queries displayed above are the following</h5>
+    {% for q in queries_data %}
+        <div class="pb-3">
+            <div class="">
+                <span class="text-dark"> Query <b>{{ q.query }}</b> has been searched {{ q.count }} times. </span> 
+            </div>
+        </div>
+    {% endfor %}
+    <br>
+
+
+    <hr>
+    <h2>Search option dashboard</h2>
+    <style>
+        h2 {
+          text-align: center;
+        }
+    </style>
+    <br>
+
+    {% set search_options = ['TF-IDF Search', 'Own Search', 'Word2Vec', 'BM25'] %}
+    <h6>The search options to choose from are the following:</h6>
+    {% for option in search_options %}
+        <div class="pb-3">
+            <div class="">
+                {{ loop.index }}. {{ option }}
+            </div>
+        </div>
+    {% endfor %}
+
+    <script>
+        const options_list = {{ search_options_data | tojson | safe }};
+        console.log("options list: ")
+        console.log(options_list)
+    </script>
+    
+    <canvas id="optionsChosen" width="400" height="400"></canvas>
+    <script>
+        const searchLabels = options_list.map(a => "Method Chosen: " + a.query);
+        const searchData = options_list.map(a => a.count);
+        const chartData_search = {
+            labels: searchLabels,
+            datasets: [{
+                label: 'Method chosen count',
+                data: searchData,
+                fill: false,
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1
+            }]
+        };
+    
+        const ctx_search = document.getElementById('optionsChosen').getContext('2d');
+    
+        // This will render the chart
+        const myChart_search = new Chart(ctx_search, {
+            type: 'line',
+            data: chartData_search,
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
+    <br>
+    <h5>The search algorithms used were the following</h5>
+    {% for so in search_options_data %}
+        <div class="pb-3">
+            <div class="">
+                <span class="text-dark"> Search algorithm <b>{{ so.query }}</b> was used {{ so.count }} times. </span> 
+            </div>
+        </div>
+    {% endfor %}
+    <br>
+    
+
+    <hr>
+    <h2>Term Frequency dashboard</h2>
+    <style>
+        h2 {
+          text-align: center;
+        }
+    </style>
+    <br>
+    
+    <script>
+        const frequent_words = {{ tf_data | tojson | safe }};
+        console.log("options list: ")
+        console.log(frequent_words)
+    </script>
+    
+    <canvas id="frequentWords" width="400" height="400"></canvas>
+    <script>
+        const tfLabels = frequent_words.map(a => "Word: " + a.query);
+        const tfData = frequent_words.map(a => a.count);
+        const chartData_tf = {
+            labels: tfLabels,
+            datasets: [{
+                label: 'Word count',
+                data: tfData,
+                fill: false,
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1
+            }]
+        };
+    
+        const ctx_tf = document.getElementById('frequentWords').getContext('2d');
+    
+        // This will render the chart
+        const myChart_tf = new Chart(ctx_tf, {
+            type: 'line',
+            data: chartData_tf,
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
+
+    <br>
+    <h5>List of most frequent query words displayed above...</h5>
+    {% for q in tf_data %}
+        <div class="pb-3">
+            <div class="">
+                <span class="text-dark"> Query word <b>{{ q.query }}</b> has been searched {{ q.count }} times. </span> 
+            </div>
+        </div>
+    {% endfor %}
+    <br>
+
 {% endblock %}
 
 
