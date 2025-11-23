@@ -1,4 +1,7 @@
 import re
+import nltk
+nltk.download('stopwords')
+
 from nltk.stem import PorterStemmer
 from nltk.corpus import stopwords
 from collections import defaultdict, Counter
@@ -43,46 +46,23 @@ def build_terms(line):
     return line
 
 
-# Function to process the "product details" of the articles
-def flatten_product_details(details):
-    """
-    Preprocess the text in "product details" and store it as a unique text.
-
-    Argument:
-    details -- dictionary to be preprocessed
-
-    Returns:
-    str(details) - unique string corresponding to the input details after the preprocessing
-    """
-    if isinstance(details, list):
-        return " ".join(f"{k} {v}" for d in details for k, v in d.items())
-    return str(details)
 
 
-
-def create_index_tfidf(dataset): # Create the index of the dataset
-    num_registers = len(dataset)
+def create_index_tfidf(processed_corpus):
+    num_registers = len(processed_corpus.keys())
     index = defaultdict(list)
     tf = defaultdict(dict)  # term -> {doc_id: tf}
     df = defaultdict(int)
     idf = defaultdict(float)
-    title_index = {}
 
-    for doc_id, row in dataset.iterrows():
-        doc_id = row['pid']
-        text = []
-        for field in ['title', 'description', 'category', 'sub_category', 'brand', 'product_details', 'seller']:
-            text.append(row[field])
-
-        terms = build_terms(" ".join(text))
-        title_index[doc_id] = row['title']
-
-        current_page_index = {} # stores words and positions of CURRENT row
-        for position, term in enumerate(terms):
+    for pid, doc_terms in processed_corpus.items():
+        
+        current_page_index = {} # stores words and positions of CURRENT doc
+        for position, term in enumerate(doc_terms):
             try:
                 current_page_index[term][1].append(position)
             except KeyError:
-                current_page_index[term] = [doc_id, [position]]
+                current_page_index[term] = [pid, [position]]
 
         # Compute norm for term frequency
         norm = math.sqrt(sum(len(posting[1])**2 for posting in current_page_index.values()))
@@ -90,82 +70,18 @@ def create_index_tfidf(dataset): # Create the index of the dataset
 
         # Fill tf and df
         for term, posting in current_page_index.items():
-            tf[term][doc_id] = len(posting[1]) / norm
+            tf[term][pid] = len(posting[1]) / norm
             df[term] += 1
 
         # Merge with main index
         for term, posting in current_page_index.items():
-            index[term].append(posting) # main index stores words and positions from ALL rows
+            index[term].append(posting) # main index stores words and positions from ALL docs
 
     # Compute idf
     for term in df:
         idf[term] = math.log(num_registers / df[term])
 
-    return index, tf, df, idf, title_index
-
-def rank_documents(query_terms, candidate_docs, index, idf, tf, title_index):
-    # Gives you a score for each term in the query parameter and obtains a document score used to order the documents by ranking
-    doc_scores = {}
-
-    # Build query vector (tf-idf)
-    q_tf = Counter(query_terms)
-    q_norm = math.sqrt(sum(freq**2 for freq in q_tf.values()))
-    if q_norm == 0: q_norm = 1.0
-    q_vec = {term: (freq / q_norm) * idf.get(term, 0) for term, freq in q_tf.items()}
-
-    for doc_id in candidate_docs:
-        score = 0.0
-        for term in query_terms:
-            if doc_id in tf.get(term, {}):
-                score += tf[term][doc_id] * idf.get(term, 0) * q_vec.get(term, 0)
-        doc_scores[doc_id] = score
-
-    ranked_docs = sorted(doc_scores, key=doc_scores.get, reverse=True)
-    return ranked_docs, doc_scores
-
-def search_tf_idf(query, index, tf, idf, title_index):
-    # Process a query, search for all the documents with the query terms, and call ranking function to rank them
-    query = build_terms(query)
-
-    term_docs = [posting[0] for posting in index[query[0]]]
-    docs = set(term_docs)
-    for term in query[1:]:
-        try:
-            # store in term_docs the ids of the docs that contain "term"
-            term_docs = [posting[0] for posting in index[term]]
-
-            # docs = docs ∩ term_docs (intersection)
-            docs &= set(term_docs)
-        except:
-            # term is not in index
-            pass
-    docs = list(docs)
-    ranked_docs,doc_scores = rank_documents(query, docs, index, idf, tf, title_index)
-
-    return ranked_docs,doc_scores
-
-
-
-def query_to_vector(query, vocab, idf):
-    terms = build_terms(query)
-
-    # Compute raw term frequencies for the query
-    tf_query = {}
-    for term in terms:
-        if term in vocab:
-            tf_query[term] = tf_query.get(term, 0) + 1
-
-    # Normalize term frequency like in create_index_tfidf()
-    norm = math.sqrt(sum(tf**2 for tf in tf_query.values()))
-    if norm == 0:
-        norm = 1.0
-
-    vector = np.zeros(len(vocab))
-    for i, term in enumerate(vocab):
-        if term in terms:
-            vector[i] = tf_query[term]/norm * idf.get(term, 0)
-    return vector
-
+    return index, tf, df, idf
 
 
 # to get the candidate docs before ranking
@@ -189,19 +105,42 @@ def conjunctive_search_terms(query, index, build_terms_fn=build_terms):
 
 
 
+def query_to_vector(query, vocabulary, idf):
+    terms = build_terms(query)
+
+    # Compute raw term frequencies for the query
+    tf_query = {}
+    for term in terms:
+        if term in vocabulary:
+            tf_query[term] = tf_query.get(term, 0) + 1
+
+    # Normalize term frequency like in create_index_tfidf()
+    norm = math.sqrt(sum(tf**2 for tf in tf_query.values()))
+    if norm == 0:
+        norm = 1.0
+
+    vector = np.zeros(len(vocabulary))
+    for i, term in enumerate(vocabulary):
+        if term in terms:
+            vector[i] = tf_query[term]/norm * idf.get(term, 0)
+    return vector
 
 
-def tfidf_cosine_rank(query, docs, tf, idf, index, title_index, vocab, build_terms_fn=build_terms, top_k=20):
+
+
+
+
+def tfidf_cosine_rank(query, docs, tf, idf, vocabulary):
     """
     Rank documents using cosine similarity over TF-IDF vectors.
     """
 
     # --- 1. Build query vector ---
-    query_vector = query_to_vector(query, vocab, idf).reshape(1, -1)
+    query_vector = query_to_vector(query, vocabulary, idf).reshape(1, -1)
 
     # --- 2. Build TF-IDF matrix for documents ---
-    tfidf_matrix = np.zeros((len(docs), len(vocab)))
-    for i, term in enumerate(vocab):
+    tfidf_matrix = np.zeros((len(docs), len(vocabulary)))
+    for i, term in enumerate(vocabulary):
       for j, doc_id in enumerate(docs):
         if doc_id in tf[term].keys():
           tf_value = tf[term][doc_id]
@@ -212,16 +151,7 @@ def tfidf_cosine_rank(query, docs, tf, idf, index, title_index, vocab, build_ter
     similarity_scores = cosine_similarity(query_vector, tfidf_matrix).flatten()
     scores = {key: score for key, score in zip(docs, similarity_scores)}
 
-    # ranked_idx = np.argsort(similarity_scores)[::-1]
-
-    # # Build result dataframe
-    # ranked = []
-    # scores = []
-    # for idx in ranked_idx[:top_k]:
-    #     ranked.append({docs[idx]: similarity_scores[idx]})
-    #     scores.append({docs[idx]: similarity_scores[idx])
-
-    ranked = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:top_k]
+    ranked = sorted(scores.items(), key=lambda x: x[1], reverse=True)
     return ranked, scores
 
 
@@ -235,7 +165,7 @@ def compute_doc_lengths_from_tf(tf):
   return doc_lengths
 
 
-def bm25_rank(query, docs, index, tf, idf, doc_lengths=None, k1=1.5, b=0.75, top_k=20, build_terms_fn=build_terms):
+def bm25_rank(query, docs, index, tf, idf, doc_lengths=None, k1=1.5, b=0.75, build_terms_fn=build_terms):
   terms = build_terms_fn(query)
   if not terms:
     return [], {}
@@ -267,17 +197,8 @@ def bm25_rank(query, docs, index, tf, idf, doc_lengths=None, k1=1.5, b=0.75, top
       scores[doc_id] += score
 
 
-  ranked = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:top_k]
+  ranked = sorted(scores.items(), key=lambda x: x[1], reverse=True)
   return ranked, scores
-
-
-
-def min_max_scaling(fashion_df, doc_id, common_docs, value):
-  min_value = fashion_df[value].min()
-  max_value = fashion_df[value].max()
-
-  return (fashion_df.loc[fashion_df["pid"] == doc_id, value] - min_value) / (max_value - min_value)
-
 
 
 
@@ -294,13 +215,13 @@ def processing_title(title, query):
 
 
 
-def ourscore_cosine(query, inverted_index, docs, vocab, fashion_df, idf, tf, top_k=20, build_terms_fn=build_terms):
+def ourscore_cosine(query, docs, vocabulary, corpus, idf, tf, build_terms_fn=build_terms):
     # 1. Query vector
-    query_vector = query_to_vector(query, vocab, idf).reshape(1, -1)
+    query_vector = query_to_vector(query, vocabulary, idf).reshape(1, -1)
 
     # --- 2. Build TF-IDF matrix for documents ---
-    tfidf_matrix = np.zeros((len(docs), len(vocab)))
-    for i, term in enumerate(vocab):
+    tfidf_matrix = np.zeros((len(docs), len(vocabulary)))
+    for i, term in enumerate(vocabulary):
       for j, doc_id in enumerate(docs):
         if doc_id in tf[term].keys():
           tf_value = tf[term][doc_id]
@@ -310,14 +231,13 @@ def ourscore_cosine(query, inverted_index, docs, vocab, fashion_df, idf, tf, top
     dot_products = tfidf_matrix.dot(query_vector.T).flatten()
 
     # 4. Load document metadata in vector form
-    df_indexed = fashion_df.set_index("pid").loc[docs]
+    actual_price_vec = np.array([corpus[doc_id].actual_price if corpus[doc_id].actual_price is not None else 0 for doc_id in docs])
+    avg_rating_vec = np.array([corpus[doc_id].average_rating if corpus[doc_id].average_rating is not None else 0 for doc_id in docs])
+    discount_vec = np.array([corpus[doc_id].discount if corpus[doc_id].discount is not None else 0 for doc_id in docs])
+    out_of_stock_vec = np.array([corpus[doc_id].out_of_stock for doc_id in docs], dtype=bool)
 
-    actual_price_vec = df_indexed["actual_price"].to_numpy()
-    avg_rating_vec = df_indexed["average_rating"].to_numpy()
-    discount_vec = df_indexed["discount"].to_numpy()
-    out_of_stock_vec = df_indexed["out_of_stock"].to_numpy().astype(bool)
     processed_query = build_terms_fn(query)
-    in_title = df_indexed["title"].apply(lambda x: processing_title(x, query=processed_query)).to_numpy()
+    in_title = np.array([processing_title(build_terms_fn(corpus[doc_id].title), query=processed_query) for doc_id in docs])
 
     # 5. Vector min-max scaling
     actual_price_vec = (actual_price_vec - actual_price_vec.min()) / (actual_price_vec.max() - actual_price_vec.min())
@@ -331,7 +251,7 @@ def ourscore_cosine(query, inverted_index, docs, vocab, fashion_df, idf, tf, top
     # 6. VECTOR final scoring
     bonus_title = 0.3 * title_vec
     base = 0.5 * dot_products + bonus_title
-    bonus = 0.3 * (discount_vec*0.4 + avg_rating_vec*0.6 - actual_price_vec*0.2)
+    bonus = 0.2 * (discount_vec*0.6 + avg_rating_vec*0.6 - actual_price_vec*0.2)
 
     scores_vec = np.where(out_of_stock_vec, base, base + bonus)
 
@@ -339,7 +259,7 @@ def ourscore_cosine(query, inverted_index, docs, vocab, fashion_df, idf, tf, top
     scores = dict(zip(docs, scores_vec))
 
     # 8. Sort and return
-    ranked = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:top_k]
+    ranked = sorted(scores.items(), key=lambda x: x[1], reverse=True)
 
     return ranked, scores
 
@@ -352,7 +272,7 @@ def doc2vec(model, words):
     return np.mean(model.wv[words], axis=0)
 
 # rank documents using Word2Vec and cosine similarity
-def word2vec_cosine_rank(query, documents, query_docs, model, build_terms_fn=build_terms, top_k=20):
+def word2vec_cosine_rank(query, documents, query_docs, model, build_terms_fn=build_terms):
   query = build_terms_fn(query)
   query_vector = doc2vec(model, query)
   doc_vectors = [doc2vec(model, doc) for doc_id, doc in documents.items() if doc_id in query_docs]
@@ -361,4 +281,4 @@ def word2vec_cosine_rank(query, documents, query_docs, model, build_terms_fn=bui
   scores = {key: score for key, score in zip(query_docs, similarity_scores)}
   ranked_docs = sorted(zip(query_docs, similarity_scores), key=lambda x: x[1], reverse=True)
 
-  return ranked_docs[:top_k], scores
+  return ranked_docs, scores

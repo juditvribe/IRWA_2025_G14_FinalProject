@@ -132,7 +132,7 @@ def search_form_post():
         analytics_data.fact_queries_to_docs[search_query] = []
 
     for result in results:
-        document_id = result.id 
+        document_id = result.pid 
         if document_id not in analytics_data.fact_queries_to_docs[search_query]:
             analytics_data.fact_queries_to_docs[search_query].append(document_id)
 
@@ -161,7 +161,7 @@ def doc_details():
     clicked_doc_id = request.args["pid"]
     print("click in id={}".format(clicked_doc_id))
 
-    result_query = corpus.get(int(clicked_doc_id))
+    result_query = corpus.get(clicked_doc_id)
 
     # store data in statistics table 1
     if clicked_doc_id in analytics_data.fact_clicks.keys():
@@ -173,7 +173,7 @@ def doc_details():
 
     print("fact_clicks count for id={} is {}".format(clicked_doc_id, analytics_data.fact_clicks[clicked_doc_id]))
     print(analytics_data.fact_clicks)
-    return render_template('doc_details.html', introduced_query = result_query)
+    return render_template('doc_details.html', clicked_doc_id=result_query)
 
 
 @app.route('/stats', methods=['GET'])
