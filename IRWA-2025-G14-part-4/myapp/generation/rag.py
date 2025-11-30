@@ -1,4 +1,5 @@
 import os
+import json
 from groq import Groq
 from dotenv import load_dotenv
 load_dotenv()  # take environment variables from .env
@@ -10,13 +11,20 @@ class RAGGenerator:
         You are an expert product advisor helping users choose the best option from retrieved e-commerce products.
 
         ## Instructions:
-        1. Identify the single best product that matches the user's request.
-        2. Present the recommendation clearly in this format:
-        - Best Product: [Product PID] [Product Name]
-        - Why: [Explain in plain language why this product is the best fit, referring to specific attributes like price, features, quality, or fit to user’s needs.]
-        3. If there is another product that could also work, mention it briefly as an alternative.
-        4. If no product is a good fit, return ONLY this exact phrase:
-        "There are no good products that fit the request based on the retrieved results."
+        1. First understand the user's intent.
+        2. Then evaluate each product using these criteria:
+        - Relevance to the user's request.
+        - Key attributes present in the data (price, rating, brand).
+        - Whether the product clearly satisfies the user needs.
+        - Completeness and reliability of metadata.
+        3. Select ONE best product and present it in this format:
+        - Best Product: [Product Name] ([Product PID])
+        - Why: [Explain in plain language why this product is the best fit, referring to specific 
+                attributes like price, features, quality, or fit to user's needs.]
+        4. If a second product is almost as good, include it as a quick alternative.
+        5. If no product is relevant or matches the user's intent, output EXACTLY the following message:
+           "There are no good products that fit the request based on the retrieved results."
+        Do all reasoning internally; the final answer must follow the output format strictly.
 
         ## Retrieved Products:
         {retrieved_results}
@@ -25,8 +33,8 @@ class RAGGenerator:
         {user_query}
 
         ## Output Format:
-        - Best Product: ...
-        - Why: ...
+        - Best Product: ... 
+        - Why: ... 
         - Alternative (optional): ...
     """
 
@@ -37,34 +45,39 @@ class RAGGenerator:
             dict: Contains the generated suggestion and the quality evaluation.
         """
         DEFAULT_ANSWER = "RAG is not available. Check your credentials (.env file) or account limits."
+        if not retrieved_results:
+            return "There are no good products that fit the request based on the retrieved results."
+
+        formatted_json = json.dumps([
+            {
+                "pid": d.pid,
+                "title": d.title,
+                "description": d.description,
+                "brand": d.brand,
+                "price": d.selling_price,
+                "rating": d.average_rating
+            }
+            for d in retrieved_results[:top_N]
+        ], indent=2)
+
+        prompt = self.PROMPT_TEMPLATE.format(
+            retrieved_results=formatted_json,
+            user_query=user_query
+        )
+
         try:
-            client = Groq(
-                api_key=os.environ.get("GROQ_API_KEY"),
-            )
+            client = Groq(api_key=os.environ["GROQ_API_KEY"])
             model_name = os.environ.get("GROQ_MODEL", "llama-3.1-8b-instant")
 
-            # Format the retrieved results for the prompt
-            formatted_results = "\n".join(
-                [f"- PID: {res.pid}, Title: {res.title}" for res in retrieved_results[:top_N]]
+            completion = client.chat.completions.create(
+                messages=[{"role": "user", "content": prompt}],
+                model=model_name
             )
 
-            prompt = self.PROMPT_TEMPLATE.format(
-                retrieved_results=formatted_results,
-                user_query=user_query
-            )
+            return completion.choices[0].message.content
 
-            chat_completion = client.chat.completions.create(
-                messages=[
-                    {
-                        "role": "user",
-                        "content": prompt,
-                    }
-                ],
-                model=model_name,
-            )
-
-            generation = chat_completion.choices[0].message.content
-            return generation
         except Exception as e:
-            print(f"Error during RAG generation: {e}")
-            return DEFAULT_ANSWER
+            return f"Error in RAG generation: {e}"
+
+
+            

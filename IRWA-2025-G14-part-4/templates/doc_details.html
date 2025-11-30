@@ -12,24 +12,26 @@
                 text-align: right;
             }
             .title {
-                margin-bottom: 15px; /* Espacio entre el título y la descripción */
-                font-size: 1.1em; /* Tamaño de fuente un poco más grande */
-                color: #550505;
+                margin-bottom: 15px; 
+                color: rgb(129, 34, 34);
+                font-family: Verdana, Geneva, sans-serif;
+                font-size: 14px;
             }
             .extra-info {
-                font-size: 1em; /* Tamaño de fuente más pequeño */
+                font-size: 12px; /* Tamaño de fuente más pequeño */
+                font-family: Verdana, Geneva, sans-serif;
                 color: #0d0c0c; /* Color gris */
             }
             .doc-url {
                 font-style: italic; /* Apply italics to urls */
-                font-size: 0.9em; /* Consistent font size with extra-info */
-                color: #003cff; /* Same color as extra-info */
+                font-size: 12px; /* Consistent font size with extra-info */
+                color: rgb(0, 10, 204); /* Same color as extra-info */
             }
     </style>
     <body>
         <div><a href="/" >Home</a></div>
     <div class="link-container"></div>
-        <div><a href="/stats" >Stats</a></div>
+        <div><a href="/stats" >Statistics</a></div>
     <div><a href="/dashboard" >Dashboard</a></div>
 
     <hr>
@@ -37,18 +39,26 @@
 
     <div class="title">
         <b>Product Id: </b> {{clicked_doc_id.pid}} <br>
-        <b>Product Title: </b> {{clicked_doc_id.title}}... <br>
+        <b>Product Title: </b> {{clicked_doc_id.title}} <br>
         <b>Product Description: </b> {{clicked_doc_id.description}}
     </div>
+
     <div class="extra-info">
         <b>Brand: </b> {{clicked_doc_id.brand}} <br>
-        <b>Category: </b> {{clicked_doc_id.category}} - <b>Subcategory: </b> {{clicked_doc_id.sub_category}} <br>
-        <b>Product Details: </b> {{clicked_doc_id.product_details}} <br>
+        <b>Category: </b> {{clicked_doc_id.category}} <br>
+        <b>Subcategory: </b> {{clicked_doc_id.sub_category}} <br>
+        <b>Product Details: </b> <br>
+        {% for key, characteristic in clicked_doc_id.product_details.items() %}
+            * <u> {{key}}</u>:  {{characteristic}} <br>
+        {% endfor %}
         <b>Seller: </b> {{clicked_doc_id.seller}} <br>
         <b>Selling Price: </b> {{clicked_doc_id.selling_price}} <br>
         <b>Discount: </b> {{clicked_doc_id.discount}} <br>
         <b>Actual Price: </b> {{clicked_doc_id.actual_price}} <br>
         <b>Average Rating: </b> {{clicked_doc_id.average_rating}} <br>
+
+        <div class="pb-2"></div>
+
         {% if clicked_doc_id.out_of_stock %}
             The product is <b>out_of_stock</b>
         {% else %}

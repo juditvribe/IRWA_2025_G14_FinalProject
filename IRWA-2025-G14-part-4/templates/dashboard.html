@@ -22,22 +22,40 @@
 
     -->
 
-    <h3>Dashboard</h3>
-    <iframe src="/plot_number_of_views" width="600" height="400" style="border: none;"></iframe>
-
+    <h2>Dashboard</h2>        
 
     <style>
-        .link-container {
-            text-align: right;
+        h2 {
+          text-align: center;
+          color:black;
+          font-family:'Times New Roman', Times, serif;
+          font-weight: bold;
         }
+        h5 {
+          text-align: center;
+          color:rgb(129, 34, 34);
+          font-family: Verdana, Geneva, sans-serif;
+          font-weight: bold;
+        }
+        h6 {
+          font-family: Verdana, Geneva, sans-serif;
+          margin-bottom: 15px;
+          font-weight: bold;
+          font-size: 14px;
+        }
+        .text-dark {
+          color:rgb(0, 0, 0);
+          font-family: Verdana, Geneva, sans-serif;
+          font-size: 14px;
+        }
+
     </style>
     <body>
         <div><a href="/">New Query</a></div>
-        <div class="link-container">
-            <a href="/stats" >Stats</a></div>
+        <div><a href="/stats" >Statistics</a></div>
     <hr>
-
     </body>
+
     <script>
         // 'visited_docs' is the data coming from Python code.
         // load the python list in the JS variable 'visits_list':
@@ -46,21 +64,22 @@
         console.log(visits_list)
     </script>
 
-    <h2>Ranking of Visited Documents</h2>
-    <canvas id="dailyVisits" width="400" height="400"></canvas>
+    <h5>Ranking of Visited Documents</h5>
+    <br>
+    <canvas id="dailyVisits" width="400" height="200"></canvas>
 
 
     <script>
-        // use JS map function top get just the tweet ids as labels
-        const visitsLabels = visits_list.map(a => "id: " + a.doc_id);
+        // use JS map function top get just the product ids as labels
+        const visitsLabels = visits_list.map(a => a.pid);
         const visitsData = visits_list.map(a => a.counter);
         const chartData_visits = {
             labels: visitsLabels,
             datasets: [{
-                label: 'Visits count',
+                label: 'Number of Visits',
                 data: visitsData,
                 fill: false,
-                borderColor: 'rgb(75, 192, 192)',
+                borderColor: 'rgb(129, 34, 34)',
                 tension: 0.1
             }]
         };
@@ -69,7 +88,7 @@
 
         // This will render the chart
         const myChart_visits = new Chart(ctx_visits, {
-            type: 'line',
+            type: 'bar',
             data: chartData_visits,
             options: {
                 scales: {
@@ -83,41 +102,27 @@
     </script>
 
     <hr>
-    <style>
-        h2 {
-          text-align: center;
-          color:black;
-          font-weight: bold;
-          margin-bottom: 15px;
-        }
-        h5 {
-          margin-bottom: 15px;
-        }
-    </style>
-    <h5>The documents displayed above are the following</h5>
+
+    <h6>The documents displayed above are the following:</h6>
     {% for doc in visited_docs %}
         <div class="pb-3">
             <div class="">
-                <span class="text-dark"> ({{ doc.counter }} visits) </span> — id: <a href="/doc_details?id={{ doc.doc_id }}">{{ doc.doc_id }}</a>
-                — {{ doc.description }}
-                <b>Associated Queries:</b>
-                    {% for query, list_docs in d_and_q %}
-                        {% if doc.doc_id in list_docs %}
-                            {{ query }}
-                        {% endif %}
-                    {% endfor %}
+                <span class="text-dark"> ({{ doc.counter }} visits) — id: {{ doc.pid }} — {{ doc.description }} </span> <br>
+                <span class="text-dark">
+                    <b>Associated Queries:</b>
+                        {% for query, list_docs in d_and_q %}
+                            {% if doc.pid in list_docs %}
+                                {{ query }}
+                            {% endif %}
+                        {% endfor %}
+                </span>
             </div>
         </div>
         <hr>
     {% endfor %}
 
     <hr>
-    <h2>Queries dashboard</h2>
-    <style>
-        h2 {
-          text-align: center;
-        }
-    </style>
+    <h5>Ranking of Queries</h5>
     <br>
     
     <script>
@@ -126,17 +131,17 @@
         console.log(queries_list)
     </script>
 
-    <canvas id="dailyQueries" width="400" height="400"></canvas>
+    <canvas id="dailyQueries" width="400" height="200"></canvas>
     <script>
-        const queriesLabels = queries_list.map(a => "query: " + a.query);
+        const queriesLabels = queries_list.map((a,i) => "Query " + String(i+1));
         const queriesData = queries_list.map(a => a.count);
         const chartData_queries = {
             labels: queriesLabels,
             datasets: [{
-                label: 'Queries count',
+                label: 'Queries Count',
                 data: queriesData,
-                fill: false,
-                borderColor: 'rgb(75, 192, 192)',
+                fill: true,
+                borderColor: 'rgb(129, 34, 34)',
                 tension: 0.1
             }]
         };
@@ -158,11 +163,11 @@
     </script>
 
     <br>
-    <h5>The queries displayed above are the following</h5>
+    <h6>The queries displayed above are the following:</h6>
     {% for q in queries_data %}
         <div class="pb-3">
             <div class="">
-                <span class="text-dark"> Query <b>{{ q.query }}</b> has been searched {{ q.count }} times. </span> 
+                <span class="text-dark"> Query <b>#{{ loop.index }}</b>: "{{ q.query }}" has been searched {{ q.count }} times. </span> 
             </div>
         </div>
     {% endfor %}
@@ -170,12 +175,7 @@
 
 
     <hr>
-    <h2>Search option dashboard</h2>
-    <style>
-        h2 {
-          text-align: center;
-        }
-    </style>
+    <h5>Ranking of Search Options</h5>
     <br>
 
     {% set search_options = ['TF-IDF Search', 'Own Search', 'Word2Vec', 'BM25'] %}
@@ -194,17 +194,17 @@
         console.log(options_list)
     </script>
     
-    <canvas id="optionsChosen" width="400" height="400"></canvas>
+    <canvas id="optionsChosen" width="400" height="200"></canvas>
     <script>
-        const searchLabels = options_list.map(a => "Method Chosen: " + a.query);
+        const searchLabels = options_list.map(a => a.query);
         const searchData = options_list.map(a => a.count);
         const chartData_search = {
             labels: searchLabels,
             datasets: [{
-                label: 'Method chosen count',
+                label: 'Method Chosen Count',
                 data: searchData,
-                fill: false,
-                borderColor: 'rgb(75, 192, 192)',
+                fill: true,
+                borderColor: 'rgb(129, 34, 34)',
                 tension: 0.1
             }]
         };
@@ -225,7 +225,7 @@
         });
     </script>
     <br>
-    <h5>The search algorithms used were the following</h5>
+    <h6>The search algorithms used were the following:</h6>
     {% for so in search_options_data %}
         <div class="pb-3">
             <div class="">
@@ -237,12 +237,7 @@
     
 
     <hr>
-    <h2>Term Frequency dashboard</h2>
-    <style>
-        h2 {
-          text-align: center;
-        }
-    </style>
+    <h5>Term Frequency</h5>
     <br>
     
     <script>
@@ -251,17 +246,17 @@
         console.log(frequent_words)
     </script>
     
-    <canvas id="frequentWords" width="400" height="400"></canvas>
+    <canvas id="frequentWords" width="400" height="200"></canvas>
     <script>
-        const tfLabels = frequent_words.map(a => "Word: " + a.query);
+        const tfLabels = frequent_words.map(a => a.query);
         const tfData = frequent_words.map(a => a.count);
         const chartData_tf = {
             labels: tfLabels,
             datasets: [{
-                label: 'Word count',
+                label: 'Word Count',
                 data: tfData,
-                fill: false,
-                borderColor: 'rgb(75, 192, 192)',
+                fill: true,
+                borderColor: 'rgb(129, 34, 34)',
                 tension: 0.1
             }]
         };
@@ -283,8 +278,8 @@
     </script>
 
     <br>
-    <h5>List of most frequent query words displayed above...</h5>
-    {% for q in tf_data %}
+    <h6>The TOP 10 most frequent query words displayed above are the following:</h6>
+    {% for q in tf_data[:10] %}
         <div class="pb-3">
             <div class="">
                 <span class="text-dark"> Query word <b>{{ q.query }}</b> has been searched {{ q.count }} times. </span> 

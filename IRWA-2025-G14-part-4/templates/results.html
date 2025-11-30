@@ -1,28 +1,68 @@
 {% extends "base.html" %}
 {% block page_title %}{{ page_title }}{% endblock %}
 {% block content %}
-
-    Found <strong>{{ found_counter }}</strong> results...
+    
+    <div class="results-counter"> 
+        <b>Query:</b> {{query}}
+        <br>
+        <b>{{ found_counter }}</b> results found...
+    </div>
     <hr>
     {% if rag_response %}
-        <div class="mb-4 p-3" style="border: 1px solid #ccc; border-radius: 5px; background-color: #f9f9f9;">
+        <div class="mb-4 p-3" style="border: 2px solid rgb(129, 34, 34); border-radius: 5px; background-color: #e0e0e0;">
             <h5>AI-Generated Summary:</h5>
-            <p>{{ rag_response }}</p>
+            <p>{{ rag_response
+                  | replace('Best Product:', '<strong>Best Product:</strong>')
+                  | replace('Why:', '<strong>Why:</strong>')
+                  | replace('Alternative', '<strong>Alternative</strong>')
+                  | replace('\n','<br>')
+                  | safe
+                }}</p>
         </div>
     {% endif %}
     <hr>
     {% for item in results_list %}
         <div class="pb-3">
             <div class="doc-title">
-                <a href="{{ item.url }}">{{ item.title }}...
+                <a href="{{ item.url }}">{{ item.title }}
                 </a>
             </div>
             <div class="doc-desc">
-                {{ item.doc_date }} — {{ item.description }}
+                {{ item.brand }} — {{ item.description }}
             </div>
 
         </div>
 
     {% endfor %}
+
+    <style>
+        .results-counter {
+          color:rgb(0, 0, 0);
+          font-family: Verdana, Geneva, sans-serif;
+          font-size: 15px;
+        }
+        .doc-title {
+          text-align: left;
+          color:rgb(0, 10, 204);
+          font-family: Verdana, Geneva, sans-serif;
+          font-weight: bold;
+          font-size: 15px;
+        }
+        .doc-desc {
+          text-align: left;
+          color:rgb(0, 0, 0);
+          font-family: Verdana, Geneva, sans-serif;
+          font-size: 13px;
+        }
+        h5 {
+          font-family: Verdana, Geneva, sans-serif;
+          font-weight: bold;
+          font-size: 15px;
+        }
+        p {
+          font-family: Verdana, Geneva, sans-serif;
+          font-size: 13px;
+        }
+    </style>
 {% endblock %}
 

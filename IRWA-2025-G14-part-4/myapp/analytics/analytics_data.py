@@ -56,8 +56,9 @@ class AnalyticsData:
 
 
 class ClickedDoc:
-    def __init__(self, doc_id, description, counter):
-        self.doc_id = doc_id
+    def __init__(self, pid, title, description, counter):
+        self.pid = pid
+        self.title = title
         self.description = description
         self.counter = counter
 

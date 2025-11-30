@@ -139,7 +139,7 @@ def search_form_post():
     #We add to total number of clicks
     analytics_data.fact_tot_num_clicks += 1
 
-    return render_template('results.html', results_list=results, page_title="Results", found_counter=found_count, rag_response=rag_response)
+    return render_template('results.html', results_list=results, page_title="Results", query=search_query, found_counter=found_count, rag_response=rag_response)
 
 
 @app.route('/doc_details', methods=['GET'])
@@ -173,7 +173,7 @@ def doc_details():
 
     print("fact_clicks count for id={} is {}".format(clicked_doc_id, analytics_data.fact_clicks[clicked_doc_id]))
     print(analytics_data.fact_clicks)
-    return render_template('doc_details.html', clicked_doc_id=result_query)
+    return render_template('doc_details.html', page_title="Product Page", clicked_doc_id=result_query)
 
 
 @app.route('/stats', methods=['GET'])
@@ -257,7 +257,7 @@ def stats():
     # simulate sort by ranking
     docs.sort(key=lambda doc: doc.count, reverse=True)
     #return render_template('stats.html', clicks_data=docs)
-    return render_template('stats.html', clicks_data=top5docs, request_data = users, session_data = sessions, queries_data = top5queries, averages = average_t, docs_for_queries= docs_for_queries)
+    return render_template('stats.html', page_title='Statistics', clicks_data=top5docs, request_data = users, session_data = sessions, queries_data = top5queries, averages = average_t, docs_for_queries= docs_for_queries)
     
 
 @app.route('/dashboard', methods=['GET'])
@@ -275,7 +275,7 @@ def dashboard():
 
     for doc_id in analytics_data.fact_clicks.keys():
         d: Document = corpus[doc_id]
-        doc = ClickedDoc(doc_id, d.description, analytics_data.fact_clicks[doc_id])
+        doc = ClickedDoc(doc_id, d.title, d.description, analytics_data.fact_clicks[doc_id])
         visited_docs.append(doc)
 
     # We save the searched queries as an structure Query
@@ -315,6 +315,7 @@ def dashboard():
 
     #return render_template('dashboard.html', visited_docs=visited_docs)
     return render_template('dashboard.html',
+                           page_title='Dashboard',
                            visited_docs =jsonify([doc.to_json() for doc in visited_docs]).json,
                            queries_data = jsonify([query.to_json() for query in queries]).json,
                            search_options_data = jsonify([option.to_json() for option in options_chosen]).json,
