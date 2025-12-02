@@ -101,6 +101,9 @@ class ResultItem(BaseModel):
     pid: str
     title: str
     description: Optional[str] = None
+    brand: Optional[str] = None
+    selling_price: Optional[float] = None
+    average_rating: Optional[float] = None
     url: Optional[str] = None
     ranking: Optional[float] = None
 
@@ -111,12 +114,14 @@ class ResultItem(BaseModel):
         return self.model_dump_json()
 
 
-
+# New class to show HTTP requests
 class UserReq:
     def __init__(self, id, count):
         self.id = id
         self.count = count
 
+
+# New class to show active sessions
 class Session:
     def __init__(self, id, start, actual_time, clicks, browser, os):  
         self.id = id
@@ -129,6 +134,8 @@ class Session:
         self.browser = browser
         self.os= os
 
+
+# New class to show query counter
 class Query:
     def __init__(self, query, count):
         self.query = query

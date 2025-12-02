@@ -8,31 +8,30 @@ from myapp.search.objects import Document, ResultItem
 
 def build_demo_results(corpus: dict, search_id, doc_scores):
     """
-    Helper method, just to demo the app
-    :return: a list of demo docs sorted by ranking
+    Method that returns the ranking of results: documents from corpues sorted by score
+    :param corpus: the documents corpus
+    :param search_id: the search id
+    :param doc_scores: dictionary of documents wiitht their corresponding scores
+    :return: a list of documents from the corpus sorted by score
     """
     res = []
     for rank, (doc_id, score) in enumerate(doc_scores): 
         doc = corpus.get(doc_id) # We get the information for the specific doc_id
         if doc:
             # We save the information needed in ResultItem form
-            res.append(Document(pid=doc.pid, title=doc.title, description=doc.description,
+            res.append(ResultItem(pid=doc.pid, title=doc.title, description=doc.description,
                             brand=doc.brand, selling_price=doc.selling_price, average_rating=doc.average_rating,
                             url="doc_details?pid={}&search_id={}&param2=2".format(doc.pid, search_id), ranking=rank))
     return res
+
 
 class SearchEngine:
     """Class that implements the search engine logic"""
 
     def search(self, search_query, search_id, corpus, selected_option):
         print("Search query:", search_query)
-
-        results = []
-        ### You should implement your search logic here:
-        # results = dummy_search(corpus, search_id)  # replace with call to search algorithm
-        # results = search_in_corpus(search_query)
         
-        # Process all fields
+        # Process all fields that need to be normalized or tokenized
         processed_corpus = {}
         for pid, doc in corpus.items():
             corpus[pid].product_details = corpus[pid].normalize_product_details(corpus[pid].product_details)
@@ -56,11 +55,11 @@ class SearchEngine:
         vocabulary = list(tf.keys())
         docs = conjunctive_search_terms(search_query, index)
 
+        results = []
         if not docs:
             print("No documents found containing all query terms.")
         else:
-            # For each search option, we use its respective function and save it to doc_scores wich is a dictionary
-            # with the form id -> score
+            # For each search option, we use its respective function and save it to doc_scores which is a dictionary: key = id | value = score
             if selected_option == "TF-IDF Search":
                 ranked_docs, doc_scores = tfidf_cosine_rank(search_query, docs, tf, idf, vocabulary)
             

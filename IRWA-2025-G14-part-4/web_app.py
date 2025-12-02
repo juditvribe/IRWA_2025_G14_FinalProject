@@ -1,5 +1,6 @@
 import os
 from json import JSONEncoder
+from datetime import datetime
 
 import httpagentparser  # for getting the user agent as json
 from flask import Flask, render_template, session, jsonify
@@ -14,7 +15,6 @@ from myapp.generation.rag import RAGGenerator
 from dotenv import load_dotenv
 load_dotenv()  # take environment variables from .env
 
-from datetime import datetime
 
 
 # *** for using method to_json in objects ***
@@ -55,7 +55,7 @@ def index():
 
     # flask server creates a session by persisting a cookie in the user's browser.
     # the 'session' object keeps data between multiple requests. Example:
-    session['some_var'] = "Some value that is kept in session"
+    session['some_var'] = "IRWA 2025"
 
     user_agent = request.headers.get('User-Agent')
     print("Raw user browser:", user_agent)
@@ -65,23 +65,23 @@ def index():
 
     print("Remote IP: {} - JSON user browser {}".format(user_ip, agent))
     
-    # We save the browser and the operating system
+    # Save the browser and the operating system
     analytics_data.fact_browser = agent['browser']['name']
     analytics_data.fact_os = agent['os']['name']
 
     print(session)
 
-    # We save the session and the time that it was established and store data in statistics table 4
+    # Save the session and the time that it was established
     if session['some_var'] not in analytics_data.fact_http_sessions:
         analytics_data.fact_http_sessions[session['some_var']] = datetime.now().time()
 
-    # We save the user and store data in statistics table 2
+    # Save the user
     if request.remote_addr in analytics_data.fact_http_requests.keys():
         analytics_data.fact_http_requests[request.remote_addr] += 1
     else:
         analytics_data.fact_http_requests[request.remote_addr] = 1
     
-    # We add to total number of clicks
+    # Add to total number of clicks
     analytics_data.fact_tot_num_clicks += 1
 
     # These are the available search options that the user will have to see the results
@@ -113,21 +113,19 @@ def search_form_post():
 
     print(session)
 
-    # We save the query and store data in statistics table 5
+    # Save the query
     if search_query in analytics_data.fact_queries.keys():
         analytics_data.fact_queries[search_query] += 1
     else:
         analytics_data.fact_queries[search_query] = 1
 
-    # We save the selected options for search algorithm
-    # and store data in statistics table 3
+    # Save the selected option for search algorithm
     if selected_option in analytics_data.fact_search_options:
         analytics_data.fact_search_options[selected_option] += 1
     else:
         analytics_data.fact_search_options[selected_option] = 1
     
-    # We link the search query to the documents that were found to be able to display the query that each document
-    # is related to
+    # Link the search query to the documents found to be able to display the query that each document is related to
     if search_query not in analytics_data.fact_queries_to_docs:
         analytics_data.fact_queries_to_docs[search_query] = []
 
@@ -136,7 +134,7 @@ def search_form_post():
         if document_id not in analytics_data.fact_queries_to_docs[search_query]:
             analytics_data.fact_queries_to_docs[search_query].append(document_id)
 
-    #We add to total number of clicks
+    # Add to total number of clicks
     analytics_data.fact_tot_num_clicks += 1
 
     return render_template('results.html', results_list=results, page_title="Results", query=search_query, found_counter=found_count, rag_response=rag_response)
@@ -146,7 +144,6 @@ def search_form_post():
 def doc_details():
     """
     Show document details page
-    ### Replace with your custom logic ###
     """
 
     # getting request parameters:
@@ -163,12 +160,13 @@ def doc_details():
 
     result_query = corpus.get(clicked_doc_id)
 
-    # store data in statistics table 1
+    # Add to visits of the clicked document
     if clicked_doc_id in analytics_data.fact_clicks.keys():
         analytics_data.fact_clicks[clicked_doc_id] += 1
     else:
         analytics_data.fact_clicks[clicked_doc_id] = 1
 
+    # Add to total number of clicks
     analytics_data.fact_tot_num_clicks += 1
 
     print("fact_clicks count for id={} is {}".format(clicked_doc_id, analytics_data.fact_clicks[clicked_doc_id]))
@@ -179,7 +177,7 @@ def doc_details():
 @app.route('/stats', methods=['GET'])
 def stats():
     """
-    Show simple statistics example. ### Replace with yourdashboard ###
+    Show simple statistics example.
     :return:
     """
     #We add to total number of clicks
@@ -197,15 +195,15 @@ def stats():
         doc = StatsDocument(pid=row.pid, title=row.title, description=row.description, url=row.url, count=count)
         docs.append(doc)
     
-    # We save in array 'users' the amount of http requests for each user
+    # Save in array 'users' the amount of http requests for each user
     for u_id in analytics_data.fact_http_requests:
         count = analytics_data.fact_http_requests[u_id]
         user = UserReq(u_id, count)
         users.append(user)
 
-    # We save in array 'sessions' the sessions that were opened with the structure Session
-    for ses_id in  analytics_data.fact_http_sessions:
-        # We compute start and current time to now the time elapsed
+    # Save in array 'sessions' the sessions that were opened with the structure Session
+    for ses_id in analytics_data.fact_http_sessions:
+        # Compute start and current time to now the time elapsed
         start_time = analytics_data.fact_http_sessions[ses_id] 
         current_time = datetime.now().time()
         total_clicks = analytics_data.fact_tot_num_clicks
@@ -214,33 +212,32 @@ def stats():
         session = Session(ses_id, start_time, current_time, total_clicks, browser, os)
         sessions.append(session)
     
-    # We save in array 'queries' the information about the queries that were searched 
+    # Save in array 'queries' the information about the queries that were searched 
     for q in  analytics_data.fact_queries:
         count = analytics_data.fact_queries[q]       
         query = Query(q,count)
         queries.append(query)
     
-    # We save in array 'docs_for_queries' the docs associated with each query searched to 
-    # display the associated query for each doc
+    # Save in array 'docs_for_queries' the docs associated with each query
     for query in analytics_data.fact_queries_to_docs:
         associated_docs = analytics_data.fact_queries_to_docs[query]
         docs_for_queries.append((query, associated_docs))
 
-    # We rank the documents that were clicked on by number of clicks
+    # Rank the documents visited by number of clicks
     docs.sort(key=lambda doc: doc.count, reverse=True)
     if len(docs) > 5:
         top5docs = docs[:5]
     else:
         top5docs = docs
 
-    # We rank the queries that were searched by amount of times searched
+    # Rank the queries that were searched by amount of times searched
     queries.sort(key=lambda query: query.count, reverse=True)
     if len(queries) > 5:
         top5queries = queries[:5]
     else:
         top5queries = queries
 
-    # Function created to get the average of tearms of the queries searched
+    # Function created to get the average of terms of the queries searched
     def get_avg_terms(arr):
         terms = 0
         if len(arr) == 0:
@@ -254,15 +251,19 @@ def stats():
 
     average_t = [top5_avg_terms, queries_avg_terms]
 
-    # simulate sort by ranking
-    docs.sort(key=lambda doc: doc.count, reverse=True)
-    #return render_template('stats.html', clicks_data=docs)
-    return render_template('stats.html', page_title='Statistics', clicks_data=top5docs, request_data = users, session_data = sessions, queries_data = top5queries, averages = average_t, docs_for_queries= docs_for_queries)
+    return render_template('stats.html',
+                           page_title='Statistics', 
+                           clicks_data=top5docs, 
+                           request_data=users, 
+                           session_data=sessions, 
+                           queries_data=top5queries, 
+                           averages=average_t, 
+                           docs_for_queries=docs_for_queries)
     
 
 @app.route('/dashboard', methods=['GET'])
 def dashboard():
-    #We add to total number of clicks
+    # Add to total number of clicks
     analytics_data.fact_tot_num_clicks += 1
     
     visited_docs = []
@@ -278,23 +279,23 @@ def dashboard():
         doc = ClickedDoc(doc_id, d.title, d.description, analytics_data.fact_clicks[doc_id])
         visited_docs.append(doc)
 
-    # We save the searched queries as an structure Query
+    # Save the searched queries as Query
     for q in  analytics_data.fact_queries:
         count = analytics_data.fact_queries[q]       
         query = Query(q, count)
         queries.append(query)
 
-    # We get the docs related to each query to be able to retrieved the associated query to each doc
+    # Save the docs related to each query
     for query in analytics_data.fact_queries_to_docs:
         associated_docs = analytics_data.fact_queries_to_docs[query]
         docs_for_queries.append((query, associated_docs))
         
-    # We save the selected options for searching 
+    # Save the selected options for searching 
     for option in analytics_data.fact_search_options:
         value = analytics_data.fact_search_options[option]
         options_chosen.append(Query(option, value))
 
-    # We get the tearm frequency for each term
+    # Get the term frequency for each term
     tf_dict = {}
     for query, count in analytics_data.fact_queries.items():
         terms = query.split()
@@ -312,15 +313,14 @@ def dashboard():
     visited_docs.sort(key=lambda doc: doc.counter, reverse=True)
 
     for doc in visited_docs: print(doc)
-
-    #return render_template('dashboard.html', visited_docs=visited_docs)
     return render_template('dashboard.html',
                            page_title='Dashboard',
-                           visited_docs =jsonify([doc.to_json() for doc in visited_docs]).json,
-                           queries_data = jsonify([query.to_json() for query in queries]).json,
-                           search_options_data = jsonify([option.to_json() for option in options_chosen]).json,
-                           tf_data = jsonify([term.to_json() for term in term_frequency]).json,
-                           d_and_q = docs_for_queries)
+                           visited_docs=jsonify([doc.to_json() for doc in visited_docs]).json,
+                           queries_data=jsonify([query.to_json() for query in queries]).json,
+                           search_options_data=jsonify([option.to_json() for option in options_chosen]).json,
+                           tf_data=jsonify([term.to_json() for term in term_frequency]).json,
+                           d_and_q=docs_for_queries)
+
 
 # New route added for generating an examples of basic Altair plot (used for dashboard)
 @app.route('/plot_number_of_views', methods=['GET'])
